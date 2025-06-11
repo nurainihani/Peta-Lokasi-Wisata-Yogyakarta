@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peta Lokasi Wisata Yogyakarta - Realtime</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-rose-50 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-rose-300 text-white py-6 shadow-lg rounded-b-3xl">
+    <h1 class="text-3xl font-bold text-center">Peta Lokasi Wisata Yogyakarta - Realtime</h1>
+    <p class="text-center text-sm">Update lokasi dan info tempat wisata secara langsung</p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="p-6 max-w-6xl mx-auto space-y-10">
+    <!-- MAP + FORM -->
+    <section class="flex flex-col lg:flex-row gap-6 h-[70vh]">
+      <!-- MAP -->
+      <div class="flex-1">
+        <div id="map" class="w-full h-full rounded-xl shadow-md"></div>
+      </div>
+
+      <!-- FORM -->
+      <div class="w-full lg:w-[300px] h-full overflow-y-auto bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">📝 Tambah Lokasi Wisata</h2>
+        <form id="form-wisata" class="space-y-4">
+          <div>
+            <label for="nama" class="block text-sm font-medium text-gray-600">Nama Wisata</label>
+            <input type="text" id="nama" class="w-full border border-gray-300 rounded-lg p-2" required>
+          </div>
+          <div>
+            <label for="alamat" class="block text-sm font-medium text-gray-600">Alamat</label>
+            <input type="text" id="alamat" class="w-full border border-gray-300 rounded-lg p-2" required>
+          </div>
+          <div>
+            <label for="deskripsi" class="block text-sm font-medium text-gray-600">Deskripsi</label>
+            <textarea id="deskripsi" class="w-full border border-gray-300 rounded-lg p-2" rows="2" required></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="lat" class="block text-sm font-medium text-gray-600">Latitude</label>
+              <input type="number" step="any" id="lat" class="w-full border border-gray-300 rounded-lg p-2" required>
+            </div>
+            <div>
+              <label for="lng" class="block text-sm font-medium text-gray-600">Longitude</label>
+              <input type="number" step="any" id="lng" class="w-full border border-gray-300 rounded-lg p-2" required>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-semibold py-2 rounded-lg">➕ Tambah Lokasi</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- DAFTAR LOKASI -->
+    <section>
+      <h2 class="text-2xl font-bold text-center text-rose-600 mt-8">📍 Berbagai Lokasi Wisata Yogyakarta</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6" id="lokasi-list"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center py-4 text-sm text-gray-600 mt-10">
+    &copy; 2025 WebGIS Wisata Yogyakarta. Dibuat untuk tugas SIG & WebGIS.
+  </footer>
+
+<script>
+  const wisataList = [
+    {
+      nama: "Pantai Parangtritis",
+      alamat: "Pantai Parangtritis Mancingan RT 07, Pantai, Parangtritis, Kec. Kretek, Kabupaten Bantul, Daerah Istimewa Yogyakarta 55772",
+      deskripsi: "Pantai legendaris dengan sunset menawan.",
+      lat: -8.025376114886605, 
+      lng: 110.33371352867937
+    },
+    {
+      nama: "Candi Borobudur",
+      alamat: "Jl. Badrawati, Kw. Candi Borobudur, Borobudur, Kec. Borobudur, Kabupaten Magelang, Jawa Tengah",
+      deskripsi: "Candi Buddha terbesar di dunia.",
+      lat: -7.6076406827534315,
+      lng: 110.20373544902803
+    },
+    {
+      nama: "Taman Sari",
+      alamat: "Patehan, Kecamatan Kraton, Kota Yogyakarta, Daerah Istimewa Yogyakarta 55133",
+      deskripsi: "Istana air bersejarah peninggalan kerajaan.",
+      lat: -7.804229743262541, 
+      lng: 110.35844365114956
+    },
+    {
+      nama: "Candi Prambanan",
+      alamat: "Jl. Raya Solo - Yogyakarta, Kranggan, Bokoharjo, Kec. Prambanan, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55571",
+      deskripsi: "Candi Hindu terbesar di Asia Tenggara selain Angkor Wat.",
+      lat: -7.751744199456429, 
+      lng: 110.49147812870396 
+    },
+    {
+      nama: "Pantai Indrayanti",
+      alamat: "Ngasem, Sidoharjo, Kec. Tepus, Kabupaten Gunungkidul, Daerah Istimewa Yogyakarta 55881",
+      deskripsi: "Pantai pasir putih dengan air jernih.",
+      lat: -8.150143213382455, 
+      lng: 110.61217244403383
+    },
+    {
+      nama: "Gunung Merapi",
+      alamat: "Dusun 2, Suroteleng, Kec. Selo, Kabupaten Boyolali, Jawa Tengah",
+      deskripsi: "Gunung berapi aktif dengan lava tour.",
+      lat: -7.539015628393245, 
+      lng: 110.4464107445771
+    },
+    {
+      nama: "Alun-Alun Kidul",
+      alamat: "Patehan, Kecamatan Kraton, Kota Yogyakarta, Daerah Istimewa Yogyakarta",
+      deskripsi: "Spot malam santai dengan odong lampu.",
+      lat: -7.811490574100794, 
+      lng: 110.36329333214341
+    },
+    {
+      nama: "Malioboro",
+      alamat: "Jl. Ketandan Kulon, Ngupasan, Kec. Gondomanan, Kota Yogyakarta, Daerah Istimewa Yogyakarta 55122",
+      deskripsi: "Jalan wisata belanja dan kuliner.",
+      lat: -7.7984918669533165, 
+      lng: 110.36517382834978
+    },
+    {
+      nama: "Kalibiru",
+      alamat: "Kalibiru, Hargowilis, Kec. Kokap, Kabupaten Kulon Progo, Daerah Istimewa Yogyakarta 55653",
+      deskripsi: "Wisata alam dengan pemandangan tinggi.",
+      lat: -7.807131459757832, 
+      lng: 110.12942075878905
+    },
+    {
+      nama: "Tebing Breksi",
+      alamat: "Jl. Desa Lengkong, RT.02/RW.17, Gn. Sari, Sambirejo, Kec. Prambanan, Kabupaten Sleman, Daerah Istimewa Yogyakarta 55572",
+      deskripsi: "Tebing batu dengan ukiran unik.",
+      lat: -7.781305648943972,
+      lng: 110.50466853058103
+    },
+    {
+      nama: "Goa Pindul",
+      alamat: "Jalan Goa Pindul Gelaran 2, RT.3/RW.16, Bejiharjo, Kec. Karangmojo, Kabupaten Gunungkidul, Daerah Istimewa Yogyakarta 55813",
+      deskripsi: "Wisata tubing di sungai bawah tanah.",
+      lat: -7.9306064265072385,
+      lng: 110.6496569501248
+    }
+  ];
+
+const map = L.map('map').setView([-7.8, 110.37], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    function renderWisata(w) {
+      const marker = L.marker([w.lat, w.lng]).addTo(map);
+      marker.bindPopup(`<b>${w.nama}</b><br>${w.alamat}<br><i>${w.deskripsi || ""}</i>`);
+
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-xl shadow p-4 hover:shadow-md transition";
+      card.innerHTML = `
+        <h2 class="text-xl font-bold text-rose-700">${w.nama}</h2>
+        <p class="text-sm text-gray-600 italic">${w.alamat}</p>
+        <p class="text-gray-700 text-sm mt-1">${w.deskripsi || ""}</p>
+      `;
+      document.getElementById("lokasi-list").appendChild(card);
+    }
+
+    wisataList.forEach(renderWisata);
+
+    document.getElementById("form-wisata").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const nama = document.getElementById("nama").value.trim();
+      const alamat = document.getElementById("alamat").value.trim();
+      const deskripsi = document.getElementById("deskripsi").value.trim();
+      const lat = parseFloat(document.getElementById("lat").value);
+      const lng = parseFloat(document.getElementById("lng").value);
+
+      if (!nama || !alamat || !deskripsi || isNaN(lat) || isNaN(lng)) {
+        alert("Harap isi semua field dengan benar.");
+        return;
+      }
+
+      const lokasiBaru = { nama, alamat, deskripsi, lat, lng };
+      renderWisata(lokasiBaru);
+      this.reset();
+    });
+  </script>
+</body>
+</html>
